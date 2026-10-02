@@ -4,7 +4,7 @@
 
 **Built by:** [Mohammed Abdul Najeeb](https://github.com/Najeeb-AI-bots)
 
-> 💡 This is a hand-built MCP server demonstrating correct **tool design** — the core of the Model Context Protocol. It pairs with my [VoiceCoach Lite](https://github.com/Najeeb-AI-bots/voicecoach-lite) app, which uses the same analysis engine in a web UI.
+> 💡 This is a hand-built MCP server demonstrating correct **tool design** — the core of the Model Context Protocol. It pairs with my [VoiceCoach Lite](https://voicecoach-lite.streamlit.app/) app, which uses the same analysis engine in a web UI.
 
 ---
 
