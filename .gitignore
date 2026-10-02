@@ -1,14 +1,6 @@
-# Secrets
-.env
-*.key
-
-# Python
 __pycache__/
 *.pyc
 .venv/
 venv/
+.env
 .DS_Store
-
-# Audio scratch
-*.wav
-*.mp3

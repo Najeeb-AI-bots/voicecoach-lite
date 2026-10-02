@@ -1,61 +1,74 @@
-# 🎙️ VoiceCoach Lite — AI Public-Speaking Coach
+# 🔌 grammar-coach — an MCP Server
 
-> Upload a speech clip and get instant AI coaching: pace, pitch, energy, confidence, and filler-word analysis — plus LLM-generated feedback on your delivery.
+> A **Model Context Protocol (MCP)** server, built from scratch with the official Python SDK, that exposes grammar and readability analysis as callable tools to any MCP host (Claude Desktop, Cursor, etc.).
 
-**Live demo:** _https://voicecoach-lite.streamlit.app/_ · **Built by:** [Mohammed Abdul Najeeb](https://github.com/Najeeb-AI-bots)
+**Built by:** [Mohammed Abdul Najeeb](https://github.com/Najeeb-AI-bots)
 
-> 💡 An open-source slice of a full desktop AI coaching app I built with Flet, Vosk, librosa, and AWS Bedrock. This public version demonstrates the core analysis + feedback loop.
+> 💡 This is a hand-built MCP server demonstrating correct **tool design** — the core of the Model Context Protocol. It pairs with my [VoiceCoach Lite](https://github.com/Najeeb-AI-bots/voicecoach-lite) app, which uses the same analysis engine in a web UI.
 
 ---
 
-## What it does
+## What is MCP (in one line)?
 
-1. **Upload** a short speech clip (or paste a transcript)
-2. **Analyze** the audio with `librosa` — pace (words/min), pitch variation, energy, pauses, estimated confidence
-3. **Transcribe** with `faster-whisper` (or paste a transcript if STT isn't available on the host)
-4. **Coach** via an LLM (AWS Bedrock → Claude, or bring-your-own-key) — feedback on pace, tone, fillers, and confidence
-5. **Score** confidence 0–100 from the combined signals
+MCP is a standard protocol — "USB-C for AI" — that lets any AI host call tools and read data from any server. This repo is the **server** side: it publishes tools, and the AI host decides when to call them. The host decides; **the server runs the code.**
 
-## Why it matters
+## The tools this server exposes
 
-Public-speaking feedback is usually subjective and infrequent. VoiceCoach Lite shows how multimodal AI (audio features + transcript + LLM) can give objective, instant, repeatable coaching.
+| Tool | Purpose | Input | Output |
+|------|---------|-------|--------|
+| `check_grammar` | Detect grammar/spelling/style errors | `text: str` | `{error_count, errors[], engine}` |
+| `score_readability` | Measure how easy text is to read | `text: str` | `{word_count, reading_ease, grade_level, ...}` |
+| `suggest_rewrite` | Produce a cleaned-up rewrite in a tone | `text: str, tone: str` | `{original, rewritten, changes_made}` |
+
+Each tool follows deliberate design rules (see below).
+
+## Tool-design principles applied
+
+This server is a worked example of good MCP tool design:
+
+1. **Verb-noun names** — `check_grammar`, not `process` or `tool1`
+2. **Descriptions state purpose + inputs + outputs + WHEN to use** — so the host routes to the right tool
+3. **Single-purpose tools** — grammar, readability, and rewrite are *different jobs*, kept separate (not a `mode` mega-tool)
+4. **Typed parameters** — `text: str`, `tone: str = "professional"` auto-generate the JSON input schema
+5. **Structured output** — every tool returns a predictable dict, never free-form prose
+
+## How it's built
+
+```python
+from mcp.server.fastmcp import FastMCP
+mcp = FastMCP("grammar-coach")
+
+@mcp.tool()
+def check_grammar(text: str) -> dict:
+    """Check English text for grammar, spelling, and style errors. ..."""
+    return run_grammar_check(text)
+```
+
+The `@mcp.tool()` decorator turns a documented, type-hinted Python function into
+a fully-schema'd MCP tool — name from the function, schema from the type hints,
+description from the docstring.
+
+## Run / test locally
+
+```bash
+pip install -r requirements.txt
+python server.py          # starts the server over stdio
+```
+
+Register it with Claude Desktop by adding the block in
+`claude_desktop_config.example.json` to your Claude config, then ask Claude:
+*"Check the grammar of this sentence: ..."* — it will call `check_grammar`.
 
 ## Architecture
 
 ```
-audio ──▶ librosa (acoustic features) ──┐
-      └─▶ faster-whisper (transcript) ───┼──▶ LLM Coach (Bedrock/Claude) ──▶ Coaching + Confidence Score
-                                          │
-                               filler + pace analysis
+AI Host (Claude Desktop) ──MCP/stdio──► server.py ──► grammar_engine.py ──► LanguageTool
+   "check my grammar"                    (3 tools)       (analysis)
 ```
-
-## Tech stack
-
-- **librosa** — pitch, energy, pace, pause, confidence analysis
-- **faster-whisper** — speech-to-text (full desktop app uses offline Vosk)
-- **AWS Bedrock → Claude** (or bring-your-own key) — coaching feedback
-- **Streamlit** — web UI (desktop original built in Flet)
-
-## Run locally
-
-```bash
-git clone https://github.com/Najeeb-AI-bots/voicecoach-lite
-cd voicecoach-lite
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-## Deploy (Streamlit Community Cloud — same as my other apps)
-
-1. Push these files to a public GitHub repo `voicecoach-lite`
-2. share.streamlit.io → Create app → repo `Najeeb-AI-bots/voicecoach-lite`, branch `main`, main file `app.py`
-3. Deploy → live at `https://<your-subdomain>.streamlit.app`
-
-Runs free with no API key (rule-based coaching + metrics). Add an Anthropic key in the sidebar for Claude-powered feedback.
 
 ## Skills demonstrated
 
-Multimodal AI · Audio signal analysis · Speech-to-text · LLM integration (Bedrock) · End-to-end app build
+MCP server design · Tool schema definition · Structured output · Single-responsibility tool granularity · Python SDK (FastMCP)
 
 ## License
 
