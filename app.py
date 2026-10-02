@@ -84,8 +84,8 @@ with st.sidebar:
     st.markdown("---")
     st.subheader("🗣️ Voice")
     voice_choice = st.selectbox("Spoken-output voice", [
-        "Female — Warm (US)", "Male — Confident (US)", "Female — Crisp (UK)",
-        "Male — Calm (UK)", "Female — Energetic (AU)", "Male — Deep (default)",
+        "Male — Deep (default)", "Female — Warm (US)", "Male — Confident (US)",
+        "Female — Crisp (UK)", "Male — Calm (UK)", "Female — Energetic (AU)",
     ])
     speak_auto = st.checkbox("🔊 Auto-play spoken output", value=True)
 
@@ -236,9 +236,9 @@ else:
         })
 
         m1, m2, m3, m4, m5 = st.columns(5)
-        m1.metric("Confidence", f"{conf}/100")
+        m1.metric("Confidence", f"{round(conf/10, 1)}/10")
         m2.metric("Grammar", f"{gscore}/100")
-        m3.metric("Pace (WPM)", text.get("wpm") or "—")
+        m3.metric("Words per minute", text.get("wpm") or "—")
         m4.metric("Filler %", f"{text.get('filler_rate_pct')}%")
         m5.metric("Words", text.get("n_words"))
 
@@ -278,7 +278,7 @@ else:
         if len(hist_df) > 1:
             st.line_chart(hist_df[["confidence", "grammar"]])
         cc = st.columns(2)
-        cc[0].metric("Best confidence", f"{hist_df['confidence'].max()}/100")
+        cc[0].metric("Best confidence", f"{round(hist_df['confidence'].max()/10, 1)}/10")
         cc[1].metric("Best grammar", f"{hist_df['grammar'].max()}/100")
         if st.button("🗑️ Clear history"):
             st.session_state["history"] = []
