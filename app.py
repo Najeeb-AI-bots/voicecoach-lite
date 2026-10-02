@@ -3,13 +3,16 @@ VoiceCoach Lite — AI Public-Speaking Coach (Streamlit)
 
 Record a clip live in the browser (or upload / paste a transcript). The app
 analyzes delivery (pace, pitch, energy, pauses, fillers), checks grammar,
-estimates confidence, and returns AI coaching feedback.
+estimates confidence, returns AI coaching feedback — and reads it aloud like a
+voice tutor via the browser's speech synthesis.
 
 Open-source demo of a full desktop app (Flet + Vosk + librosa + AWS Bedrock).
 Deploys on Streamlit Community Cloud — same flow as EscalaFlow / AuditLens.
 """
 
+import json as _json
 import streamlit as st
+import streamlit.components.v1 as components
 
 from analysis import analyze_audio, analyze_text, confidence_score
 from transcribe import transcribe
@@ -21,8 +24,8 @@ st.set_page_config(page_title="VoiceCoach Lite", page_icon="🎙️", layout="wi
 st.title("🎙️ VoiceCoach Lite — AI Public-Speaking Coach")
 st.caption(
     "Record a short clip and get instant coaching on pace, tone, fillers, grammar, "
-    "and confidence. Open-source demo of a full desktop app "
-    "(Flet · Vosk · librosa · AWS Bedrock). Built by Mohammed Abdul Najeeb."
+    "and confidence — read aloud like a voice tutor. Open-source demo of a full "
+    "desktop app (Flet · Vosk · librosa · AWS Bedrock). Built by Mohammed Abdul Najeeb."
 )
 
 with st.sidebar:
@@ -36,6 +39,7 @@ with st.sidebar:
         api_key = st.text_input("Anthropic API key", type="password",
                                 help="Used only in this session, never stored.")
     st.markdown("---")
+    speak_auto = st.checkbox("🔊 Auto-play spoken feedback", value=True)
     st.caption("Tip: a 20-60 second clip works best. If transcription isn't "
                "available on the host, paste your transcript for full analysis.")
 
@@ -115,8 +119,34 @@ if st.button("🔎 Analyze my delivery", type="primary"):
     st.subheader("🎯 Coaching Feedback")
     st.text_area("", feedback, height=240)
 
+    # 🔊 Voice tutor — speak the feedback aloud (browser speech synthesis, no install)
+    st.subheader("🔊 Hear Your Coach")
+    st.caption("Your coaching feedback, read aloud — like a voice tutor.")
+    safe = _json.dumps(feedback)
+    autoplay = "speak();" if speak_auto else ""
+    components.html(f"""
+        <div style="font-family:sans-serif">
+          <button onclick="speak()" style="padding:10px 18px;border:none;border-radius:8px;
+            background:#6554c0;color:white;font-size:14px;font-weight:600;cursor:pointer;">
+            ▶ Play coaching feedback
+          </button>
+          <button onclick="window.speechSynthesis.cancel()" style="padding:10px 18px;margin-left:8px;
+            border:1px solid #ccc;border-radius:8px;background:white;cursor:pointer;">⏹ Stop</button>
+        </div>
+        <script>
+          function speak() {{
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance({safe});
+            u.rate = 1.0; u.pitch = 1.0; u.lang = 'en-US';
+            window.speechSynthesis.speak(u);
+          }}
+          {autoplay}
+        </script>
+    """, height=80)
+
 st.markdown("---")
 st.caption(
     "Built by Mohammed Abdul Najeeb · open-source demo of a production voice-coaching "
-    "app (Flet desktop original). No data stored; audio processed in-session only."
+    "app (Flet desktop original). Pairs with the mcp-speech-coach MCP server. "
+    "No data stored; audio processed in-session only."
 )
