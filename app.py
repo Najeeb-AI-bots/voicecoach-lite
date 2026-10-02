@@ -1,9 +1,9 @@
 """
 VoiceCoach Lite — AI Public-Speaking Coach (Streamlit)
 
-Upload a short speech clip (or paste a transcript). The app analyzes delivery
-(pace, pitch, energy, pauses, fillers), estimates confidence, and returns AI
-coaching feedback.
+Record a clip live in the browser (or upload / paste a transcript). The app
+analyzes delivery (pace, pitch, energy, pauses, fillers), estimates confidence,
+and returns AI coaching feedback.
 
 Open-source demo of a full desktop app (Flet + Vosk + librosa + AWS Bedrock).
 Deploys on Streamlit Community Cloud — same flow as EscalaFlow / AuditLens.
@@ -19,8 +19,8 @@ st.set_page_config(page_title="VoiceCoach Lite", page_icon="🎙️", layout="wi
 
 st.title("🎙️ VoiceCoach Lite — AI Public-Speaking Coach")
 st.caption(
-    "Upload a short speech clip and get instant coaching on pace, tone, fillers, "
-    "and confidence. Open-source demo of a full desktop app "
+    "Record a short clip and get instant coaching on pace, tone, fillers, and "
+    "confidence. Open-source demo of a full desktop app "
     "(Flet · Vosk · librosa · AWS Bedrock). Built by Mohammed Abdul Najeeb."
 )
 
@@ -36,27 +36,33 @@ with st.sidebar:
                                 help="Used only in this session, never stored.")
     st.markdown("---")
     st.caption("Tip: a 20-60 second clip works best. If transcription isn't "
-               "available on the host, paste your transcript below for full analysis.")
+               "available on the host, paste your transcript for full analysis.")
 
 col1, col2 = st.columns(2)
 with col1:
-    audio_file = st.file_uploader("🎧 Upload speech clip (WAV/MP3/M4A)",
-                                  type=["wav", "mp3", "m4a", "ogg", "flac"])
+    st.markdown("**🎙️ Record live**")
+    recorded = st.audio_input("Click the mic to record your speech")
+    st.markdown("**— or upload a file —**")
+    audio_file = st.file_uploader("Upload a clip (WAV/MP3/M4A)",
+                                  type=["wav", "mp3", "m4a", "ogg", "flac"],
+                                  label_visibility="collapsed")
 with col2:
-    manual = st.text_area("📝 Transcript (optional — paste if STT unavailable)", height=120)
+    manual = st.text_area("📝 Transcript (optional — paste if STT unavailable)", height=160)
 
 if st.button("🔎 Analyze my delivery", type="primary"):
-    if not audio_file and not manual.strip():
-        st.warning("Please upload an audio clip or paste a transcript.")
+    # Prefer a live recording; fall back to uploaded file
+    audio_source = recorded or audio_file
+    if not audio_source and not manual.strip():
+        st.warning("Please record, upload an audio clip, or paste a transcript.")
         st.stop()
 
-    # Persist uploaded audio to a temp path for librosa
     audio_path = None
-    if audio_file:
+    if audio_source:
         import tempfile, os
-        suffix = os.path.splitext(audio_file.name)[1] or ".wav"
+        name = getattr(audio_source, "name", "recording.wav")
+        suffix = os.path.splitext(name)[1] or ".wav"
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-        tmp.write(audio_file.read())
+        tmp.write(audio_source.read())
         tmp.flush()
         audio_path = tmp.name
 
@@ -71,7 +77,6 @@ if st.button("🔎 Analyze my delivery", type="primary"):
         conf = confidence_score(acoustic, text)
         feedback = coach(acoustic, text, conf, transcript, provider=provider, api_key=api_key)
 
-    # Metrics
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Confidence", f"{conf}/100")
     m2.metric("Pace (WPM)", text.get("wpm") or "—")

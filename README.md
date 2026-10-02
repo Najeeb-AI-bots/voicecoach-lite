@@ -2,7 +2,7 @@
 
 > Upload a speech clip and get instant AI coaching: pace, pitch, energy, confidence, and filler-word analysis — plus LLM-generated feedback on your delivery.
 
-**Live demo:** _https://voicecoach-lite.streamlit.app/_ · **Built by:** [Mohammed Abdul Najeeb](https://github.com/Najeeb-AI-bots)
+**Live demo:** _[add Streamlit link here]_ · **Built by:** [Mohammed Abdul Najeeb](https://github.com/Najeeb-AI-bots)
 
 > 💡 An open-source slice of a full desktop AI coaching app I built with Flet, Vosk, librosa, and AWS Bedrock. This public version demonstrates the core analysis + feedback loop.
 
